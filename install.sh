@@ -15,17 +15,16 @@ mkdir -p "$PROJECT_DIR/scripts/logs"
 # Make the generator executable
 chmod +x "$PROJECT_DIR/scripts/generate-tip.sh"
 
-# Unload existing agent if present
-if launchctl list | grep -q "$PLIST_NAME"; then
-  echo "Unloading existing agent..."
-  launchctl unload "$PLIST_DST" 2>/dev/null || true
-fi
+# Unload existing agent (try both methods unconditionally)
+echo "Removing previous agent if present..."
+launchctl bootout "gui/$(id -u)/$PLIST_NAME" 2>/dev/null || true
+launchctl remove "$PLIST_NAME" 2>/dev/null || true
 
 # Patch the plist with the actual install path
 sed "s|__INSTALL_DIR__|$PROJECT_DIR|g" "$PLIST_SRC" > "$PLIST_DST"
 
 # Load the agent
-launchctl load "$PLIST_DST"
+launchctl bootstrap "gui/$(id -u)" "$PLIST_DST"
 
 echo ""
 echo "Installed successfully!"
@@ -36,4 +35,4 @@ echo "  Logs:     $PROJECT_DIR/scripts/logs/"
 echo ""
 echo "To test now:  ./scripts/generate-tip.sh"
 echo "To verify:    launchctl list | grep tmux-tips"
-echo "To uninstall: launchctl unload $PLIST_DST && rm $PLIST_DST"
+echo "To uninstall: launchctl bootout gui/\$(id -u)/$PLIST_NAME && rm $PLIST_DST"
