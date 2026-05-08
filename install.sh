@@ -20,8 +20,8 @@ echo "Removing previous agent if present..."
 launchctl bootout "gui/$(id -u)/$PLIST_NAME" 2>/dev/null || true
 launchctl remove "$PLIST_NAME" 2>/dev/null || true
 
-# Patch the plist with the actual install path
-sed "s|__INSTALL_DIR__|$PROJECT_DIR|g" "$PLIST_SRC" > "$PLIST_DST"
+# Patch the plist with the actual install path and home directory
+sed -e "s|__INSTALL_DIR__|$PROJECT_DIR|g" -e "s|__HOME__|$HOME|g" "$PLIST_SRC" > "$PLIST_DST"
 
 # Load the agent
 launchctl bootstrap "gui/$(id -u)" "$PLIST_DST"
