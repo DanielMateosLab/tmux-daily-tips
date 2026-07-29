@@ -1,6 +1,6 @@
 # tmux tips and tricks
 
-A self-growing repository of tmux tips. Every day at 7:30 AM (local time), a launchd agent invokes Claude CLI to generate a new markdown tip that doesn't duplicate any existing one.
+A self-growing repository of tmux tips. On weekdays (Mon-Fri) at 05:00, 10:05, and 15:10 (local time) a launchd agent invokes Claude CLI to generate a new markdown tip that doesn't duplicate any existing one. The 05:00 run kicks off a rate-limit session early so it resets predictably at 10:00; the 10:05 and 15:10 runs each follow shortly after a reset.
 
 ## How it works
 
@@ -10,7 +10,7 @@ A self-growing repository of tmux tips. Every day at 7:30 AM (local time), a lau
 4. The tip is saved as `tips/YYYY-MM-DD-short-description.md`
 5. If inside a git repo, it auto-commits and pushes
 
-The macOS launchd agent runs this daily — even if the screen is locked. If the laptop was asleep at 7:30 AM, the job fires as soon as it wakes up.
+The macOS launchd agent runs this three times on each weekday — even if the screen is locked. If the laptop was asleep at trigger time, the job fires as soon as it wakes up.
 
 ## Project structure
 
@@ -36,11 +36,11 @@ tmux-tips-and-tricks/
 
 ### Scheduler (`com.tmux-tips.daily.plist`)
 
-A macOS LaunchAgent using `StartCalendarInterval` (Hour=7, Minute=30).
+A macOS LaunchAgent using `StartCalendarInterval` as an array of entries — one per (weekday, time) pair — covering Mon-Fri at 05:00, 10:05, and 15:10.
 
 Key behaviors:
 - Runs under the logged-in user session, so it works even when the screen is locked
-- If the Mac was asleep at 7:30 AM, launchd fires the job on wake — no missed runs
+- If the Mac was asleep at a trigger time, launchd fires the job on wake — no missed runs
 - `install.sh` patches `__INSTALL_DIR__` placeholders with the actual repo path before copying to `~/Library/LaunchAgents/`
 - Stdout/stderr are routed to `scripts/logs/` for debugging
 

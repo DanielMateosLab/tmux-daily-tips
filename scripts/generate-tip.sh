@@ -6,6 +6,7 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TIPS_DIR="$PROJECT_DIR/tips"
 LOG_DIR="$SCRIPT_DIR/logs"
 TODAY="$(date +%Y-%m-%d)"
+NOW="$(date +%Y-%m-%d-%H%M)"
 
 mkdir -p "$TIPS_DIR" "$LOG_DIR"
 
@@ -31,7 +32,7 @@ $EXISTING_TIPS
 Output ONLY the markdown content, nothing else."
 
 # Generate the tip
-LOG_FILE="$LOG_DIR/$TODAY.log"
+LOG_FILE="$LOG_DIR/$NOW.log"
 RAW_OUTPUT="$(echo "$PROMPT" | claude -p --tools '' 2>"$LOG_FILE")"
 
 if [ -z "$RAW_OUTPUT" ]; then
