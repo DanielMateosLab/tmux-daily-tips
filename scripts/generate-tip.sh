@@ -33,7 +33,7 @@ Output ONLY the markdown content, nothing else."
 
 # Generate the tip
 LOG_FILE="$LOG_DIR/$NOW.log"
-RAW_OUTPUT="$(echo "$PROMPT" | claude -p --tools '' 2>"$LOG_FILE")"
+RAW_OUTPUT="$(echo "$PROMPT" | claude -p --model haiku --tools '' 2>"$LOG_FILE")"
 
 if [ -z "$RAW_OUTPUT" ]; then
   echo "Error: claude produced no output. Check $LOG_FILE" >&2
