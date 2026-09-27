@@ -62,5 +62,6 @@ echo "[$TODAY] Generated: $(basename "$OUTPUT_FILE")" >> "$LOG_FILE"
 if git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
   git -C "$PROJECT_DIR" add "$OUTPUT_FILE" 2>/dev/null || true
   git -C "$PROJECT_DIR" commit -m "Add tip: $TODAY-$SLUG" 2>/dev/null || true
+  git -C "$PROJECT_DIR" pull --rebase --autostash 2>/dev/null || true
   git -C "$PROJECT_DIR" push 2>/dev/null || true
 fi
