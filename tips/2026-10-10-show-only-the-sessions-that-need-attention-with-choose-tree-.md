@@ -1,46 +1,51 @@
 # Show Only the Sessions That Need Attention with `choose-tree -f`
 
-Skip the scrolling. Open the session tree with a filter applied so only matching sessions or windows are listed, and jump straight to the one you need.
+Running `choose-tree` shows every session, window, and pane. When you have many sessions, the ones that matter are buried in the list. The `-f` flag takes a filter expression, so you can show only the entries that meet a condition, such as sessions with unread activity or windows with a bell.
 
-## The Shortcut
-
-- `prefix` + `s` opens the session tree (`choose-tree -Zs`).
-- Inside it, `/` starts a search and filters the list as you type.
-
-`choose-tree` also takes a `-f` filter flag, which lets you open the tree already narrowed down. Use it from a bound key or the command prompt:
+## The Command
 
 ```
-tmux choose-tree -Zs -f '#{m:*api*,#{session_name}}'
+tmux choose-tree -s -f '#{?session_alert,1,0}'
 ```
 
-The filter is a format expression. Only items where it evaluates true are shown.
+- `-s` opens the session tree.
+- `-f` applies a format-based filter. An entry is shown only when the expression evaluates to a non-zero value.
+- `#{session_alert}` is set when a window in the session has an alert, such as activity, silence, or a bell.
 
-## Why It Helps
+## Explanation
 
-On a machine with dozens of sessions and windows, the default tree is noisy. A filter lets you:
+`choose-tree` accepts `-f` to filter items before they appear in the list. The filter is a format string, so any format variable works. The `#{?cond,yes,no}` conditional makes it easy to write a boolean check.
 
-- Show only sessions whose name matches a project
-- Show only windows currently running a particular command
-- Show only panes with activity flagged
+Some useful filters:
 
-Because the filter is a normal format expression, you can combine any format variables tmux exposes.
+| Goal | Filter |
+|------|--------|
+| Sessions with alerts | `#{?session_alert,1,0}` |
+| Windows with a bell | `#{?window_bell_flag,1,0}` |
+| Windows with activity | `#{?window_activity_flag,1,0}` |
+| Sessions that are attached elsewhere | `#{?session_attached,1,0}` |
 
-## Example: A Bound Key for Build Windows
-
-Add this to `~/.tmux.conf` to open a tree showing only windows whose name starts with `build-`:
-
-```
-bind B choose-tree -Zw -f '#{m:build-*,#{window_name}}'
-```
-
-Now `prefix` + `B` shows only build windows. Press `Enter` to jump to one, or `Escape` to close.
-
-## Example: Show Only Flagged Windows
-
-To list only windows that have an activity alert:
+Combine the tree view with a key binding so you can open the filtered view on demand:
 
 ```
-bind A choose-tree -Zw -f '#{||:#{window_activity_flag},#{window_bell_flag}}'
+bind A choose-tree -s -f '#{?session_alert,1,0}'
 ```
 
-Reload with `prefix` + `:` then `source-file ~/.tmux.conf`.
+Press `prefix` then `A` to see only the sessions that need your attention. Select one with the arrow keys and press `Enter` to jump to it.
+
+## Example
+
+Suppose you run three long builds in separate sessions and one has finished with a bell. Your `choose-tree` normally lists all three plus your idle sessions. With the filter, only the session that rang the bell appears:
+
+```
+$ tmux new -d -s build-a 'make; sleep 999'
+$ tmux new -d -s build-b 'make; sleep 999'
+$ tmux new -d -s idle
+$ tmux choose-tree -s -f '#{?session_alert,1,0}'
+```
+
+Make sure `monitor-bell` is on so the bell raises the alert flag:
+
+```
+set -g monitor-bell on
+```
