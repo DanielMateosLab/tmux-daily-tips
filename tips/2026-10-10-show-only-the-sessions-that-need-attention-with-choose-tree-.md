@@ -1,51 +1,37 @@
 # Show Only the Sessions That Need Attention with `choose-tree -f`
 
-Running `choose-tree` shows every session, window, and pane. When you have many sessions, the ones that matter are buried in the list. The `-f` flag takes a filter expression, so you can show only the entries that meet a condition, such as sessions with unread activity or windows with a bell.
+Once you run many tmux sessions, the full session list gets noisy. The `choose-tree` filter lets you narrow the tree view with a format expression, so you see only the sessions that matter right now, such as those with unseen activity or an active bell.
 
-## The Command
+## The command
 
 ```
 tmux choose-tree -s -f '#{?session_alert,1,0}'
 ```
 
-- `-s` opens the session tree.
-- `-f` applies a format-based filter. An entry is shown only when the expression evaluates to a non-zero value.
-- `#{session_alert}` is set when a window in the session has an alert, such as activity, silence, or a bell.
-
-## Explanation
-
-`choose-tree` accepts `-f` to filter items before they appear in the list. The filter is a format string, so any format variable works. The `#{?cond,yes,no}` conditional makes it easy to write a boolean check.
-
-Some useful filters:
-
-| Goal | Filter |
-|------|--------|
-| Sessions with alerts | `#{?session_alert,1,0}` |
-| Windows with a bell | `#{?window_bell_flag,1,0}` |
-| Windows with activity | `#{?window_activity_flag,1,0}` |
-| Sessions that are attached elsewhere | `#{?session_attached,1,0}` |
-
-Combine the tree view with a key binding so you can open the filtered view on demand:
+Or bind it to a key in your config:
 
 ```
-bind A choose-tree -s -f '#{?session_alert,1,0}'
+bind T choose-tree -s -f '#{||:#{session_alert},#{session_activity_flag}}'
 ```
 
-Press `prefix` then `A` to see only the sessions that need your attention. Select one with the arrow keys and press `Enter` to jump to it.
+- `-s` starts the tree in session mode.
+- `-f` takes a format string. Only items where the expression evaluates to a non-zero value are shown.
+- `session_alert` is true when any window in the session has a bell, activity, or silence alert pending.
+- `session_activity_flag` is true when a window in the session has unseen activity.
+
+## How it works
+
+The filter is evaluated for each session. Sessions where the expression is `0` or empty are hidden, so the tree shows only the flagged sessions. Pressing `Enter` on an entry switches to that session and clears its alert state, so the list shrinks as you handle each one.
+
+Combine it with `monitor-activity on` or `monitor-bell on` in the relevant windows so that the flags get set in the first place.
 
 ## Example
 
-Suppose you run three long builds in separate sessions and one has finished with a bell. Your `choose-tree` normally lists all three plus your idle sessions. With the filter, only the session that rang the bell appears:
+Set up a long-running build in one session and monitor it:
 
 ```
-$ tmux new -d -s build-a 'make; sleep 999'
-$ tmux new -d -s build-b 'make; sleep 999'
-$ tmux new -d -s idle
-$ tmux choose-tree -s -f '#{?session_alert,1,0}'
+tmux new-session -d -s build 'make all; tmux display-message "build done"'
+tmux set-option -t build monitor-activity on
 ```
 
-Make sure `monitor-bell` is on so the bell raises the alert flag:
-
-```
-set -g monitor-bell on
-```
+Then, from any other session, press your binding. The tree shows only `build` (and any other session with pending alerts). Select it with the arrow keys and press `Enter` to jump there.
