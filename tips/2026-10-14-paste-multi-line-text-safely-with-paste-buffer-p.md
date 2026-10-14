@@ -1,46 +1,40 @@
-# Paste Multi-Line Text Safely with `paste-buffer -p`
+# Paste multi-line text safely with paste-buffer -p
 
-By default, `paste-buffer` sends each newline as a carriage return, so a shell or REPL runs every line as soon as it arrives. The `-p` flag wraps the paste in bracketed paste sequences. Applications that support bracketed paste (zsh, bash with readline, vim, Python REPL, and most modern editors) then treat the whole block as one paste and don't execute it line by line.
+Pasting a multi-line snippet into a pane normally sends each newline as Enter, so a shell or REPL executes every line the moment it arrives. That breaks indented blocks, half-finished functions, and anything you want to review first. `paste-buffer -p` wraps the paste in bracketed-paste escape sequences, which tells the receiving program "this is a paste, not typing." Modern shells and editors (bash, zsh, fish, vim, Python's REPL) then insert the whole block as one edit instead of executing line by line.
 
 ## Usage
 
-```
-tmux paste-buffer -p -t {target-pane}
-```
-
-Bind it to a key so you can paste from the prompt:
-
-```
-bind P paste-buffer -p
-```
-
-Press `prefix` + `P` to paste the most recent buffer.
-
-## Example
-
-Suppose you have a multi-line snippet in a buffer:
+Load the text into a buffer, then paste it with `-p`:
 
 ```sh
-tmux set-buffer "for f in *.log; do
-  echo \"== \$f ==\"
-  tail -n 3 \"\$f\"
-done"
-```
-
-Pasting it normally runs each line as it arrives, which can break loops and leave partial commands behind. With `-p`, the shell receives the block as one paste and waits for you to press Enter:
-
-```sh
+tmux load-buffer snippet.py
 tmux paste-buffer -p -t work:0.1
 ```
 
-Add `-d` to delete the buffer after pasting, which is useful for one-off snippets:
+Or from inside tmux, with the prefix key:
 
-```sh
-tmux paste-buffer -p -d -t work:0.1
 ```
+prefix :
+paste-buffer -p -t work:0.1
+```
+
+Without `-p`, the same buffer is sent as raw keystrokes and every newline becomes Enter.
+
+## Example
+
+Suppose `snippet.py` contains:
+
+```python
+def greet(name):
+    print(f"hello, {name}")
+
+greet("world")
+```
+
+Running `tmux paste-buffer -p -t dev:0.1` into a Python REPL pane inserts all four lines as one block. The REPL shows the function definition, waits for you to press Enter once, and then runs it. Without `-p`, the REPL would execute `def greet(name):` as an incomplete statement and garble the indentation of the following lines.
 
 ## Notes
 
-- `-p` only has an effect if the target application has enabled bracketed paste mode. If it hasn't, tmux falls back to a normal paste.
-- Use `-r` if you need the newlines left as plain LF instead of converted to CR.
-- Check your buffers with `tmux list-buffers` before pasting.
+- The receiving program must support bracketed paste. Most modern shells and REPLs do; if a program does not, the escape sequences appear as literal junk, so test on a throwaway pane first.
+- Combine with `-d` to delete the buffer after pasting, which keeps your paste-buffer list tidy.
+- Use `choose-buffer` (prefix `=`) to pick which snippet to paste when you have several loaded.
