@@ -1,51 +1,39 @@
-# Jump to the Next Window with an Alert Using `next-window -a`
+# Jump to the Next Window With an Alert Using `next-window -a`
 
-Instead of cycling through every window to find the one that needs you, `next-window -a` (and `previous-window -a`) jumps straight to the next window that has a bell or activity alert.
+`next-window -a` (short for `next-window -a`, with the `-a` flag) moves focus to the next window in the session that has an alert flag set, such as bell, activity, or silence. It skips windows with no alerts, so you can work through background tasks that need attention without scanning the window list.
+
+## Why it's useful
+
+When several windows are running long jobs, you usually want to know which one just finished or printed an error. Instead of cycling through every window with `next-window`, the `-a` flag jumps straight to the next one that has signaled something.
 
 ## Setup
 
-Alerts only fire if monitoring is enabled. Add this to `~/.tmux.conf`:
+Alerts only fire for windows where monitoring is enabled. Turn on activity and bell monitoring in your config:
 
 ```tmux
-setw -g monitor-activity on
-set -g bell-action any
+set -g monitor-activity on
+set -g visual-activity on
+set -g monitor-bell on
 ```
 
-Then bind the alert jump keys:
+## Binding it to a key
+
+Add a binding that uses the alert-aware variant:
 
 ```tmux
-bind N next-window -a
-bind P previous-window -a
+bind-key N next-window -a
 ```
 
-Reload with `prefix + r` (see [source-file](2026-04-16-use-source-file-to-reload-config-without-restarting.md)) or run:
+With that in place, press `prefix` then `N` to jump to the next alerting window.
 
-```sh
-tmux source-file ~/.tmux.conf
-```
+## Example workflow
 
-## How It Works
+1. Start a long build in window 1: `make -j8`
+2. Start a test run in window 2: `pytest -q`
+3. Switch to window 0 and keep working.
+4. When the build or tests print output, the window's activity flag is set and the status bar marks it.
+5. Press `prefix` then `N` to go straight to the window that reported activity.
 
-- A window gets an alert when it has activity (`monitor-activity`) or rings the bell (`bell-action`).
-- `prefix + N` moves to the next alerted window, clearing its flag as you land on it.
-- If no window has an alert, the command does nothing, so the keys are safe to press at any time.
+## Tip
 
-## Example
-
-Suppose you have five windows running:
-
-1. `editor`
-2. `server` (printing logs)
-3. `tests` (a long build that finishes)
-4. `db`
-5. `shell`
-
-While you work in `editor`, `tests` finishes and rings the bell. Press `prefix + N` and tmux selects `tests` directly, skipping `server` and `db` even though they also have output.
-
-To check which windows are flagged before jumping, run:
-
-```sh
-tmux list-windows -F '#{window_index}: #{window_name} #{window_flags}'
-```
-
-Flags like `#` (activity) and `!` (bell) show which windows are waiting for you.
+Pair this with `choose-tree` (`prefix` then `w`) to see every window's alert state at once, then use `next-window -a` for quick hops between them.
