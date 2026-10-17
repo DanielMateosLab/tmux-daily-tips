@@ -1,39 +1,35 @@
 # Jump to the Next Window With an Alert Using `next-window -a`
 
-`next-window -a` (short for `next-window -a`, with the `-a` flag) moves focus to the next window in the session that has an alert flag set, such as bell, activity, or silence. It skips windows with no alerts, so you can work through background tasks that need attention without scanning the window list.
+tmux can jump straight to the next window that has an activity or bell alert, so you don't have to cycle through every window to find where something happened.
 
-## Why it's useful
+## Command
 
-When several windows are running long jobs, you usually want to know which one just finished or printed an error. Instead of cycling through every window with `next-window`, the `-a` flag jumps straight to the next one that has signaled something.
-
-## Setup
-
-Alerts only fire for windows where monitoring is enabled. Turn on activity and bell monitoring in your config:
-
-```tmux
-set -g monitor-activity on
-set -g visual-activity on
-set -g monitor-bell on
+```
+tmux next-window -a
 ```
 
-## Binding it to a key
+Bind it to a key in your config, for example:
 
-Add a binding that uses the alert-aware variant:
-
-```tmux
+```
 bind-key N next-window -a
 ```
 
-With that in place, press `prefix` then `N` to jump to the next alerting window.
+Press `prefix` + `N` to jump to the next window flagged with activity (`#`), a bell (`!`), or silence (`~`) in the status bar.
 
-## Example workflow
+## Why It Helps
 
-1. Start a long build in window 1: `make -j8`
-2. Start a test run in window 2: `pytest -q`
-3. Switch to window 0 and keep working.
-4. When the build or tests print output, the window's activity flag is set and the status bar marks it.
-5. Press `prefix` then `N` to go straight to the window that reported activity.
+When a long-running build, test suite, or server writes output in a background window, tmux marks that window in the status bar. Cycling with `n` or `p` means stepping past every window in between. `next-window -a` skips straight to the windows that need your attention, in index order after the current window.
 
-## Tip
+## Example
 
-Pair this with `choose-tree` (`prefix` then `w`) to see every window's alert state at once, then use `next-window -a` for quick hops between them.
+Set up a background build and an alert monitor:
+
+```
+tmux new-session -d -s work -n editor
+tmux new-window -d -t work -n build "make -j8 && echo done"
+tmux set-option -w -t work:build monitor-activity on
+```
+
+Now, while you work in `editor`, the `build` window gets an activity flag when output arrives. Press `prefix` + `N` to jump to it without scanning the other windows.
+
+Pair it with `set-option -g visual-activity on` if you also want a status message whenever an alert fires.
