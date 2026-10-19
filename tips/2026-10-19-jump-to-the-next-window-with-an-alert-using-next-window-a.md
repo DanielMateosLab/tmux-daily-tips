@@ -1,41 +1,41 @@
-# Jump to the next window with an alert using `next-window -a`
+# Jump to the Next Window with an Alert Using `next-window -a`
 
-Pressing `prefix` + `M-n` is the usual way to step through windows, but it treats every window the same. Use `next-window -a` to skip straight to the next window that has an activity or bell alert, so you can reach a finished build or a new log line without scanning the whole window list.
+Need to find the window that just finished a build, printed output, or rang the bell? `next-window -a` cycles only through windows that have activity flags set, so you skip straight to the one that needs attention.
 
-## The command
+## Command
 
 ```
 tmux next-window -a
 ```
 
-Like the other `next-window` variants, it can be bound to a key. Add this to `~/.tmux.conf`:
+Bind it to a key in your config to use it interactively:
 
-```tmux
+```
 bind-key N next-window -a
 ```
 
-Then reload with `prefix` + `:` and `source-file ~/.tmux.conf`, or with `tmux source-file ~/.tmux.conf` from a shell.
+Press `prefix` + `N` to jump to the next window with activity, bell, or silence flags set. Windows with no flags are skipped.
 
-## How it works
+## Why it helps
 
-`next-window -a` moves forward from the current window and stops at the first window flagged with activity (`#`) or a bell (`!`). If no window is flagged, the command does nothing and you stay where you are.
+With many windows open, `next-window` (`prefix` + `n`) walks through every window in order. When a long-running job finishes in window 7 while you're working in window 2, you'd have to check each window one by one. The `-a` flag filters that walk down to the windows that actually changed.
 
-Alerts only appear when monitoring is enabled. Turn it on for the windows you care about:
-
-```tmux
-set-window-option -g monitor-activity on
-set-window-option -g monitor-bell on
-```
-
-The flags show in the window list in the status bar, so you can see which windows are waiting before you jump.
+Flags are cleared once you visit the window, so repeated presses move forward through each alerting window in turn.
 
 ## Example
 
-Start a long build in one window and keep working in another:
+Start a long task in window 3, then switch to another window:
 
-```sh
-# window 2: start a build that prints output when finished
-make -j8 && echo "build done"
+```
+# In window 3
+make test && echo "tests done"
 ```
 
-Switch to window 1 and keep editing. When the build finishes, window 2 gets an activity flag. Press `prefix` + `N` and tmux moves you straight to window 2, and it skips any other windows that have no alert.
+Switch to window 1 and keep working. When `make test` finishes and prints output, window 3 gets an activity flag. From window 1, press `prefix` + `N` and tmux jumps directly to window 3.
+
+For the flags to appear, enable monitoring first:
+
+```
+set-option -g monitor-activity on
+set-option -g visual-activity on
+```
