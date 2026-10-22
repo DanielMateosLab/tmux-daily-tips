@@ -1,30 +1,18 @@
 # Move the status bar to the top with status-position
 
-The status bar sits at the bottom of the screen by default. Setting `status-position top` moves it above the panes, which keeps it out of the way of shell prompts that end at the bottom edge and makes the window list read first.
+Tmux draws the status bar at the bottom of the screen by default. Setting `status-position` to `top` moves it to the first row, which keeps it visible on tall terminals and matches the layout of many other tools.
 
-## Command
-
-```
-tmux set-option -g status-position top
-```
-
-The `-g` flag applies the change to every session on the server. Omit it to set the option for the current session only.
-
-## Example
-
-Add this line to `~/.tmux.conf` so the layout survives restarts:
+## The option
 
 ```
-set -g status-position top
+set-option -g status-position top
 ```
 
-Then reload the config without restarting tmux:
+Use `-g` for the global default, or omit it and pass `-s`/`-w` to scope the change to a session or window. Valid values are `top` and `bottom`.
 
-```
-tmux source-file ~/.tmux.conf
-```
+## Toggle it on the fly
 
-To toggle between top and bottom on the fly, bind a key that flips the value:
+Bind a key that flips the position, so you can compare both layouts without editing the config:
 
 ```
 bind T if-shell -F '#{==:#{status-position},top}' \
@@ -32,4 +20,15 @@ bind T if-shell -F '#{==:#{status-position},top}' \
   'set -g status-position top'
 ```
 
-Press `prefix` then `T` to switch. The change takes effect immediately across all clients.
+Press `prefix` then `T` to switch. Pick a key you do not already use; check with `list-keys` first.
+
+## Example
+
+Add this to `~/.tmux.conf` and reload with `tmux source-file ~/.tmux.conf`:
+
+```
+set -g status-position top
+set -g status-style 'bg=colour236,fg=colour250'
+```
+
+The status bar now sits above the panes, and the window list starts at the left edge of the top row.
