@@ -1,46 +1,45 @@
-# Show a tmux Window's Layout Name in the Status Bar with `#{window_layout}`
+# Show a tmux window's layout name in the status bar with `#{window_layout}`
 
-tmux stores a window's current layout as a string (the same string `select-layout` and `list-windows` use internally). Format variables let you show it directly in the status bar, which helps when you're juggling several layouts and want to know which one you're in without cycling through them.
+tmux stores the geometry of every window as a layout string. While the layout string is precise, it is hard to read. The `window_layout` format variable exposes that string, and you can use it in the status bar to show a compact label such as the arrangement of panes in each window.
 
-## The Format Variable
-
-```
-#{window_layout}
-```
-
-This expands to the full layout description, a checksum-prefixed string such as `d2e4,211x50,0,0{105x50,0,0,1,105x50,106,0,2}`. It is most useful when you pass it through a conditional or a substring to make it readable.
-
-## Example
-
-Add this to `~/.tmux.conf` to show a short, readable identifier for each window's layout:
-
-```tmux
-set -g window-status-format \
-  " #I:#W #{?#{==:#{window_panes},1},single,#{?#{==:#{window_panes},2},split,multi}} "
-```
-
-For a more direct view, add the raw layout string to the right side of the status bar:
-
-```tmux
-set -g status-right "#{window_layout}"
-```
-
-Reload the config and check the result:
-
-```sh
-tmux source-file ~/.tmux.conf
-```
-
-## Checking the Value First
-
-Before editing your config, confirm what the variable returns for the current window:
+For a quick check, run this from any pane:
 
 ```sh
 tmux display-message -p '#{window_layout}'
 ```
 
-This prints the layout string for the active window. Run it after switching layouts with `select-layout` (or `prefix + space`) to watch the string change.
+The output looks something like `d3a2,190x50,0,0{95x50,0,0,0,94x50,96,0,1}`. The string is long and mostly useful for scripts, so we'll reduce it to something easier to read.
 
-## Tip
+## Example: show the layout string in the status bar
 
-The raw string is long and changes whenever you resize panes, so it's best for debugging or for saving a layout to replay later with `select-layout`. For everyday display, the pane count shown above is usually more useful.
+Add this to `~/.tmux.conf`:
+
+```tmux
+set -g window-status-format ' #I:#W [#{window_layout}] '
+set -g window-status-current-format ' #I:#W [#{window_layout}] '
+```
+
+Then reload the config:
+
+```sh
+tmux source-file ~/.tmux.conf
+```
+
+Each window's tab now includes its layout string. This is handy when you want to save an exact arrangement with `select-layout` or compare two windows at a glance.
+
+## Example: show a short fingerprint instead of the full string
+
+The full layout string can be wide. Pipe it through `cksum` in a `#()` command to get a short, stable fingerprint that changes whenever the arrangement changes:
+
+```tmux
+set -g window-status-format ' #I:#W <#(echo "#{window_layout}" | cksum | cut -c1-4)> '
+set -g window-status-current-format ' #I:#W <#(echo "#{window_layout}" | cksum | cut -c1-4)> '
+```
+
+Two windows with the same four-character tag have the same pane geometry, which is useful for spotting duplicate layouts across a session.
+
+## Notes
+
+- `window_layout` only reflects geometry. Pane contents, titles, and commands are not included.
+- Because the value changes on every resize, expect the status bar to update when you resize panes.
+- The `#()` shell form runs once per status refresh, so keep the command cheap.
