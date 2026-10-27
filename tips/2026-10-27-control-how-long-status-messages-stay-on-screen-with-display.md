@@ -1,42 +1,37 @@
-# Control How Long Status Messages Stay On Screen with `display-time`
+# Control how long status messages stay on screen with display-message -d
 
-tmux shows transient messages in the status bar for things like `display-message`, `command-prompt` errors, and `choose-buffer` feedback. By default they vanish after about 750 ms, which can be too quick to read. The `display-time` option sets how long they stay, in milliseconds.
+`display-message -d <ms>` sets how long a status-bar message stays visible. Without `-d`, the message uses the `display-time` option (default 750 ms), which is easy to miss when the message carries useful output.
 
-## The Option
+## Syntax
 
 ```
-set-option -g display-time <milliseconds>
+tmux display-message -d <milliseconds> "<message>"
 ```
 
-Use `-g` for all sessions. Omit it to apply the setting to the current session only.
+Setting `-d 0` keeps the message on screen until you press a key.
 
 ## Explanation
 
-Messages that are easy to miss include:
+- `-d` overrides `display-time` for a single message only.
+- Useful inside scripts or key bindings where a result needs to be read before it disappears.
+- To change the default for every message, set the server-wide option instead:
 
-- Errors from a failed `source-file` or a bad key binding
-- Output from `display-message -p`-style checks you run interactively
-- Confirmations after `set-buffer`, `save-buffer`, or `rename-window`
-
-Raising `display-time` gives you time to read them. Set it to `0` to keep the message until your next keypress. Lower values keep the status bar cleaner.
-
-To pick a value for a single moment, run it from the command prompt with `prefix :` and then type the command. The change applies immediately, so you can adjust it without editing your config.
+```
+tmux set -g display-time 3000
+```
 
 ## Example
 
-Add this to `~/.tmux.conf` to keep messages on screen for three seconds:
+Bind a key that shows the current session's window count for 5 seconds:
 
 ```
-# Keep status messages visible for 3 seconds
-set-option -g display-time 3000
+tmux bind-key W display-message -d 5000 "Windows: #{session_windows} in #{session_name}"
 ```
 
-Then reload the config:
+Press `prefix` then `W`. The message stays in the status bar for five seconds, long enough to read it.
+
+For a message that stays until dismissed, use `-d 0` in a script that reports a result you need to copy:
 
 ```
-tmux source-file ~/.tmux.conf
+tmux display-message -d 0 "Build finished: $(tail -1 build.log)"
 ```
-
-Now run a command that produces a message, such as renaming a window with `prefix ,`. The confirmation stays in the status bar for three seconds before it clears.
-
-For errors you want to read in full, set a longer delay only while you work on the config, then reset it to the default.
