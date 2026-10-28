@@ -1,44 +1,38 @@
-# Set a different default shell for new panes without touching your login shell
+# Set a different default shell for new panes without touching your config
 
-**Option:** `default-shell` (and the more specific `default-command`)
+Use `default-shell` to change which shell tmux launches in new panes and windows, without editing your login shell or your `.zshrc`. It's handy when you want tmux to start a specific shell (for example, a newer Homebrew bash or fish) while the rest of your system keeps its default.
 
-`default-shell` sets the program tmux launches in every new pane and window. Your login shell stays the same, so only tmux sessions change. `default-command` takes a full command string instead of a path, which is useful for wrapping the shell in extra setup.
-
-Changes apply only to panes created afterward. Existing panes keep their current shell.
-
-## Example
-
-Set the default shell in `~/.tmux.conf`. The path must be absolute:
-
-```tmux
-# Launch fish in new panes and windows, while the login shell stays zsh
-set -g default-shell /opt/homebrew/bin/fish
-```
-
-To change it on a running server without editing the config, use the command prompt or the CLI:
+## Command
 
 ```sh
-tmux set -g default-shell /bin/zsh
-tmux new-window     # opens a zsh window
+tmux set-option -g default-shell /path/to/shell
 ```
 
-Check the current value:
+Check the current value first:
 
 ```sh
 tmux show-options -g default-shell
 ```
 
-## Running a wrapper with default-command
+## Explanation
 
-If you need setup before the shell starts, such as loading a Python virtualenv or sourcing a project env file, use `default-command`:
+- `-g` sets the option globally for the server, so every new session, window, and pane uses it.
+- `default-shell` only affects shells that tmux launches. Your login shell (`chsh`) and existing panes are unchanged.
+- Changes apply to panes created after the change. Running panes keep their current shell.
+- To make it permanent, add the line to `~/.tmux.conf`, then reload with `tmux source-file ~/.tmux.conf`.
 
-```tmux
-set -g default-command "zsh -c 'source ~/.work-env; exec zsh -l'"
+## Example
+
+Start new panes in fish instead of your login shell:
+
+```sh
+tmux set-option -g default-shell "$(command -v fish)"
 ```
 
-`exec` replaces the wrapper process with the shell, so `Ctrl-d` in the pane exits cleanly instead of leaving a stray parent process.
+Persist it in `~/.tmux.conf`:
 
-## When to use it
+```tmux
+set -g default-shell "/opt/homebrew/bin/fish"
+```
 
-- You want a different shell inside tmux, such as `fish` or `nu`, but scripts and cron jobs still expect your default login shell.
-- You want every new pane to start with the same environment without repeating setup in each pane.
+Then open a new window with `prefix c` and run `echo $FISH_VERSION` to confirm the shell.
