@@ -1,30 +1,36 @@
-# Size the main pane exactly with `main-pane-width` and `main-pane-height`
+# Size the main pane exactly with main-pane-width and main-pane-height
 
-The `main-vertical` and `main-horizontal` layouts give one large pane and stack the rest beside or below it. By default tmux sizes that main pane automatically. Setting `main-pane-width` or `main-pane-height` fixes its size, so the layout stays the same across terminal resizes.
+The `main-pane-width` and `main-pane-height` options set the exact size of the main pane in the `main-vertical` and `main-horizontal` layouts. Without them, tmux picks a size from the window dimensions, so the main pane shifts whenever the terminal resizes.
 
-## The options
+## Setting the size
 
-- `main-pane-width` sets the width of the main pane in `main-vertical` layouts.
-- `main-pane-height` sets the height of the main pane in `main-horizontal` layouts.
+Run these from the command prompt (`prefix :`) or put them in `~/.tmux.conf`:
 
-Both accept a number of columns or rows, or a percentage such as `60%`.
+```
+set -g main-pane-width 120
+set -g main-pane-height 30
+```
+
+`main-pane-width` applies to `main-vertical`, which places the main pane on the left and stacks the others on the right. `main-pane-height` applies to `main-horizontal`, which places the main pane on top. Values are in columns or rows. You can also use a percentage, such as `60%`.
+
+## Applying it to a window
+
+Set the width, then switch to the layout so tmux rebuilds the window with it:
+
+```
+tmux set -w main-pane-width 100
+tmux select-layout main-vertical
+```
+
+Cycle to `main-vertical` with `prefix Space` or `select-layout` once the option is set. Rebuilding the layout is what applies the new width, so changing the option alone does not resize an existing layout.
 
 ## Example
 
-Add this to `~/.tmux.conf`, then reload it with `prefix + r` if you bind it, or with `tmux source-file ~/.tmux.conf`:
+A 200-column terminal running an editor on the left and a shell and logs stacked on the right:
 
 ```
-set -g main-pane-width 60%
-set -g main-pane-height 70%
-
+set -g main-pane-width 120
 bind M select-layout main-vertical
-bind N select-layout main-horizontal
 ```
 
-Press `prefix + M` to put the focused window into a 60% wide main pane with the other panes stacked on the right. Press `prefix + N` for a 70% tall main pane with the others in a row beneath it.
-
-The sizes apply each time tmux builds one of these layouts, so you can resize the terminal window and the main pane keeps its proportion. Manual resizes with `resize-pane` last only until the next layout change.
-
-## Tip
-
-Use the percentage form for a window you share across machines with different screen sizes. A fixed column count such as `120` can leave the main pane too narrow on a smaller terminal.
+Now `prefix M` gives the editor exactly 120 columns, and the remaining 79 columns go to the stacked panes. The width stays at 120 across terminal resizes, unlike the default layout, which splits evenly.
